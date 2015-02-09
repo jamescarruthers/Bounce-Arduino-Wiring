@@ -76,6 +76,44 @@ bool Bounce::update()
 #endif
 }
 
+bool Bounce::manualUpdate(bool manualState)
+{
+#ifdef BOUNCE_LOCK_OUT
+    state &= ~_BV(STATE_CHANGED);
+    // Ignore everything if we are locked out
+    if (millis() - previous_millis >= interval_millis) {
+        bool currentState = manualState;
+        if ((bool)(state & _BV(DEBOUNCED_STATE)) != currentState) {
+            previous_millis = millis();
+            state ^= _BV(DEBOUNCED_STATE);
+            state |= _BV(STATE_CHANGED);
+        }
+    }
+    return state & _BV(STATE_CHANGED);
+#else
+    // Read the state of the switch in a temporary variable.
+    bool currentState = manualState;
+    state &= ~_BV(STATE_CHANGED);
+
+    // If the reading is different from last reading, reset the debounce counter
+    if ( currentState != (bool)(state & _BV(UNSTABLE_STATE)) ) {
+        previous_millis = millis();
+        state ^= _BV(UNSTABLE_STATE);
+    } else
+        if ( millis() - previous_millis >= interval_millis ) {
+            // We have passed the threshold time, so the input is now stable
+            // If it is different from last state, set the STATE_CHANGED flag
+            if ((bool)(state & _BV(DEBOUNCED_STATE)) != currentState) {
+                previous_millis = millis();
+                state ^= _BV(DEBOUNCED_STATE);
+                state |= _BV(STATE_CHANGED);
+            }
+        }
+
+    return state & _BV(STATE_CHANGED);
+#endif
+}
+
 bool Bounce::read()
 {
     return state & _BV(DEBOUNCED_STATE);

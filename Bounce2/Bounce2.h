@@ -56,6 +56,8 @@ class Bounce
     // Returns 0 if the state did not change
     bool update();
 
+    bool manualUpdate(bool manualState);
+
     // Returns the updated pin state
     bool read();
 
